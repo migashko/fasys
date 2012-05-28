@@ -1,6 +1,7 @@
 #include <list>
 #include <boost/program_options.hpp>
 
+#include <fas/method/method.hpp>
 namespace po = boost::program_options;
 
 struct fasys_params
@@ -29,6 +30,66 @@ public:
 	}
 };
 
+
+
+struct my_method:
+  ::fas::method<int, int, int, true>
+{};
+
+struct my_method2:
+  ::fas::method<long, long, long, true>
+{};
+
+class my_class
+  : public my_method
+  , public my_method2
+{
+  fas::callback_pointer<int, int> _callback1;
+  fas::callback_pointer<long, long> _callback2;
+public:
+  virtual fas::method_status::type request(const int&, int&, int&, fas::callback_pointer<int, int> callback)
+  {
+    std::cout << "int" << std::endl;
+    _callback1 = callback;
+    return fas::method_status::ready;
+  }
+
+  virtual fas::method_status::type request(const long&, long&, long&, fas::callback_pointer<long, long> callback)
+  {
+    std::cout << "long" << std::endl;
+    _callback2 = callback;
+    return fas::method_status::ready;
+  }
+
+  void fire()
+  {
+    std::cout << "fire" << std::endl;
+    if ( _callback1 )
+    {
+      std::cout << "fire1" << std::endl;
+      _callback1->response(0);
+    }
+  }
+};
+
+class my_callback:
+  public fas::callback_method<int, int>
+{
+public:
+  virtual fas::method_status::type response(const int&)
+  {
+     std::cout << "callback int" << std::endl;
+    return fas::method_status::ready;
+  }
+
+  virtual fas::method_status::type error(const int&)
+  {
+    return fas::method_status::ready;
+  }
+
+};
+
+
 int main(int argc, char* argv[])
 {
 	fasys_params fp;
@@ -54,6 +115,19 @@ int main(int argc, char* argv[])
 		return 0;
   }
 
+  my_class m;
+  {
+  my_callback mc;
+  int response =0;
+  int error = 0; 
+
+  long response2 =0;
+  long error2 = 0; 
+
+  m.request( 0, response, error, &mc );
+  m.request( 0, response2, error2, 0 );
+  }
+  m.fire();
 
 	return 0;
 }

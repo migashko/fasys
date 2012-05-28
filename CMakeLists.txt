@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
 project(fasys)
+include_directories(. ../faslib2)
 add_subdirectory(fasys)
 add_subdirectory(fasysd)
